@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AkureMarket2 - Ondo Market</title>
+<script src="https://js.paystack.co/v1/inline.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:sans-serif;}
+body{background:#f5f5f5;padding-bottom:80px;}
+.header{background:#111;color:#fff;padding:12px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:15;}
+.logo{font-weight:900;font-size:19px;letter-spacing:0.5px;}
+.banner{background:#00c950;color:#fff;text-align:center;padding:8px;font-weight:800;font-size:12px;}
+.container{max-width:960px;margin:0 auto;padding:12px;}
+.card{background:#fff;border-radius:12px;padding:14px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,0.08);}
+.btn{border:none;border-radius:8px;padding:11px 14px;font-weight:800;cursor:pointer;width:100%;font-size:14px;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:6px;}
+.btn-green{background:#00c950;color:#fff;}
+.btn-black{background:#111;color:#fff;}
+.btn-whatsapp{background:#25D366;color:#fff;}
+input,textarea,select{width:100%;padding:11px;border:1px solid #ddd;border-radius:8px;margin-top:8px;font-size:14px;}
+label{font-weight:800;font-size:12px;margin-top:10px;display:block;color:#333;}
+.product-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.product{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);border:1px solid #eee;}
+.product img{width:100%;height:150px;object-fit:cover;background:#eee;}
+.product-body{padding:10px;}
+.price{color:#00c950;font-weight:900;font-size:16px;}
+.location{font-size:11px;color:#666;margin:2px 0;}
+.seller{font-size:11px;color:#111;font-weight:700;}
+.desc{font-size:11px;color:#555;margin:4px 0;white-space:pre-wrap;}
+.status{padding:10px;text-align:center;border-radius:8px;margin:8px 0;font-weight:800;font-size:13px;}
+.success{background:#d1fae5;color:#065f46;}
+.error{background:#fee2e2;color:#991b1b;}
+.hidden{display:none;}
+.preview{width:100%;height:180px;object-fit:cover;border-radius:10px;margin-top:8px;border:2px dashed #00c950;display:none;}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#111;color:#fff;display:flex;justify-content:space-around;padding:10px;z-index:20;border-top:2px solid #00c950;}
+.bottom-nav button{background:none;border:none;color:#fff;font-weight:800;font-size:12px;}
+.modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;z-index:30;padding:12px;}
+.modal-box{background:#fff;border-radius:16px;padding:18px;width:100%;max-width:430px;max-height:92vh;overflow-y:auto;}
+.tag{background:#00c950;color:#fff;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:800;margin-left:4px;}
+/* Added enhancements; all original styling above is preserved. */
+.market-tools{background:#fff;border-radius:12px;padding:12px;margin:10px 0 14px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.market-tools .tool-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.market-tools button,.extra-action{border:0;border-radius:8px;padding:9px;font-size:12px;font-weight:800;cursor:pointer}
+.market-tools button{background:#111;color:#fff;margin-top:8px}
+.extra-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+.extra-action{width:100%;background:#f2f2f2;color:#111;margin-top:0}
+.extra-action.is-saved{background:#ffe4e6;color:#9f1239}
+.product[hidden]{display:none!important}
+.empty-results{background:#fff;border-radius:12px;padding:18px;text-align:center;grid-column:1/-1;color:#555}
+@media(min-width:650px){.product-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:360px){.product-grid{grid-template-columns:1fr}.market-tools .tool-row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">AkureMarket2 <span class="tag">AKURE</span></div>
+  <div id="userInfo" style="font-size:11px;"></div>
+</div>
+
+<div class="banner">PAY INSIDE SITE • PICTURE UPLOAD • DIRECT WHATSAPP • ₦200 TO SELL!</div>
+
+<div class="container">
+  <div id="msg"></div>
+
+  <div id="productsSection">
+    <h3 style="margin:10px 0;">Hot Products - Akure Today</h3>
+    <!-- Added search and discovery tools; existing product grid remains. -->
+    <div class="market-tools" id="marketTools">
+      <label for="marketSearch" style="margin-top:0">Search AkureMarket2</label>
+      <input id="marketSearch" type="search" placeholder="Search phones, chairs, cars, beds..." autocomplete="off">
+      <div class="tool-row">
+        <div><label for="marketCategory">Category</label><select id="marketCategory"><option value="">All categories</option><option>Cars</option><option>Phones</option><option>Electronics</option><option>Furniture - Chair</option><option>Furniture - Bed</option><option>Fashion</option><option>AirPod / Gadgets</option><option>Other</option></select></div>
+        <div><label for="marketSort">Sort products</label><select id="marketSort"><option value="newest">Newest first</option><option value="low">Price: low to high</option><option value="high">Price: high to low</option><option value="az">Name A–Z</option></select></div>
+      </div>
+      <div class="tool-row">
+        <button type="button" onclick="showAllMarketProducts()">All products</button>
+        <button type="button" onclick="showSavedMarketProducts()">♥ Saved products</button>
+      </div>
+      <div id="marketResultCount" style="font-size:12px;color:#666;margin-top:9px" aria-live="polite"></div>
+    </div>
+    <div id="productGrid" class="product-grid"></div>
+  </div>
+
+  <div id="sellSection" class="card hidden">
+    <h3>Sell Your Product - ₦200 per post</h3>
+    <p style="font-size:12px;color:#555;">Login → Pay ₦200 inside site → Upload picture → Publish → Buyer go chat you for WhatsApp direct!</p>
+    <div id="payStatus" class="status hidden"></div>
+
+    <label>Product Name *</label>
+    <input id="pName" placeholder="e.g. Toyota Camry 2008 Tokunbo">
+
+    <label>Price (₦) *</label>
+    <input id="pPrice" type="number" placeholder="e.g. 1800000">
+
+    <label>Category *</label>
+    <select id="pCategory">
+      <option value="">Select Category</option>
+      <option>Cars</option>
+      <option>Phones</option>
+      <option>Electronics</option>
+      <option>Furniture - Chair</option>
+      <option>Furniture - Bed</option>
+      <option>Fashion</option>
+      <option>AirPod / Gadgets</option>
+      <option>Other</option>
+    </select>
+
+    <label>Location in Akure *</label>
+    <select id="pLocation">
+      <option value="">Select Location</option>
+      <option>Alagbaka</option>
+      <option>Oja Oba</option>
+      <option>FUTA</option>
+      <option>Akure South</option>
+      <option>Akure North</option>
+      <option>Ijapo</option>
+      <option>Oyemekun</option>
+      <option>Alagbaka - Shop</option>
+    </select>
+
+    <label>Your WhatsApp Number * (Buyers go chat you direct)</label>
+    <input id="pWhatsApp" placeholder="08105737556 - Must be WhatsApp number">
+
+    <label>Description *</label>
+    <textarea id="pDesc" rows="4" placeholder="Describe product - Engine good, AC freezer, first body, etc + your location"></textarea>
+
+    <label>Product Picture * (Gallery or Camera)</label>
+    <input id="pImageFile" type="file" accept="image/*">
+    <img id="pPreview" class="preview" alt="Preview">
+
+    <button id="payBtn" class="btn btn-green" onclick="payToPost()">PAY ₦200 INSIDE SITE TO UNLOCK PUBLISH</button>
+    <button id="publishBtn" class="btn btn-black hidden" onclick="publishProduct()">PUBLISH NOW (Paid) - Everybody go see am!</button>
+    <button class="btn" style="background:#eee;color:#111;" onclick="closeSell()">Cancel</button>
+  </div>
+</div>
+
+<div class="bottom-nav">
+  <button onclick="showHome()">Home</button>
+  <button onclick="openSell()" style="background:#00c950;padding:8px 14px;border-radius:20px;color:#fff;font-weight:900;">SELL ₦200</button>
+  <button onclick="openLogin()" id="loginBtn">Login</button>
+</div>
+
+<div id="loginModal" class="modal hidden">
+  <div class="modal-box">
+    <h3>Login / Register to Sell</h3>
+    <p style="font-size:12px;color:#666;">Put your name & WhatsApp - Na your seller ID</p>
+
+    <label>Your Full Name *</label>
+    <input id="uName" placeholder="Wisdom James">
+
+    <label>Your WhatsApp Number *</label>
+    <input id="uPhone" placeholder="08105737556">
+
+    <label>Password (any 4 digits) *</label>
+    <input id="uPass" type="password" placeholder="1234">
+
+    <button class="btn btn-black" onclick="doLogin()">Login / Register & Start Selling</button>
+    <button class="btn" style="background:#eee;color:#111;" onclick="closeLogin()">Close</button>
+  </div>
+</div>
+
+<script>
+const PAYSTACK_PUBLIC_KEY = "pk_live_3e86bdc5d9f76f4afed4e81e1f3ab4b6fae3c8a95";
+let currentUser = JSON.parse(localStorage.getItem('ak2_user') || 'null');
+let products = JSON.parse(localStorage.getItem('ak2_products') || 'null');
+let hasPaidForCurrentPost = JSON.parse(localStorage.getItem('ak2_hasPaid') || 'false');
+let currentImageBase64 = "";
+
+const defaultProducts = [
+  {name:"Toyota Camry 2008 Tokunbo - First Body", price:"1850000", location:"Alagbaka", category:"Cars", phone:"08105737556", seller:"Wisdom Autos", desc:"Clean Tokunbo Camry\nFirst Body - No accident\nEngine = Sewing Machine\nAC na Freezer\nPapers complete", image:"https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=400"},
+  {name:"Honda Accord 2010 - Neat Interior", price:"2200000", location:"Ijapo", category:"Cars", phone:"08105737556", seller:"Akure Cars", desc:"Honda Accord 2010 Very Clean, Alloy, Leather seat, AC chilling", image:"https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=400"},
+  {name:"iPhone 12 - 128GB - UK Used", price:"180000", location:"Oja Oba", category:"Phones", phone:"08105737556", seller:"Wisdom Phones", desc:"UK Used iPhone 12 Battery 98% Face ID working sharp Camera clear", image:"https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=400"},
+  {name:"AirPod Pro LOUD - Original Bass", price:"6000", location:"Alagbaka", category:"AirPod / Gadgets", phone:"08105737556", seller:"Wisdom Gadgets", desc:"Original AirPod Pro LOUD Bass loud pass speaker Battery 2 days Touch control", image:"https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?w=400"},
+  {name:"Cushion Chair - 3 Seater", price:"45000", location:"Ijapo", category:"Furniture - Chair", phone:"08105737556", seller:"Akure Furniture", desc:"Cushion Chair set - Strong wood, thick foam, neat cover Used 3 months only", image:"https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400"},
+  {name:"6x6 Bed Frame + Mattress", price:"70000", location:"FUTA", category:"Furniture - Bed", phone:"08105737556", seller:"Student Lodge", desc:"6x6 Bed - Iron frame strong + Foam mattress + 2 pillows Buy and sleep today", image:"https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=400"},
+  {name:"Samsung Smart TV 43 inch", price:"120000", location:"Oyemekun", category:"Electronics", phone:"08105737556", seller:"Wisdom Electronics", desc:"Samsung 43 inch Smart TV Netflix, Youtube, Bluetooth Remote + Stand Neat like new", image:"https://images.unsplash.com/photo-1593359677879-a4bb92f367d8?w=400"},
+  {name:"JBL Bluetooth Speaker - LOUD Bass", price:"15000", location:"Alagbaka", category:"Electronics", phone:"08105737556", seller:"Gadget Hub Akure", desc:"JBL Speaker - Bass go shake ground Battery 10hrs Waterproof Follow come charger", image:"https://images.unsplash.com/photo-1608043152269-423dbba4e7e4?w=400"}
+];
+
+if(!products || products.length === 0){
+  products = defaultProducts;
+  localStorage.setItem('ak2_products', JSON.stringify(products));
+}
+
+function showMsg(t, type){
+  const m = document.getElementById('msg');
+  m.innerHTML = `<div class="status ${type==='error'?'error':'success'}">${t}</div>`;
+  window.scrollTo(0,0);
+  setTimeout(()=>{m.innerHTML='';}, 6000);
+}
+
+function updateUserInfo(){
+  const el = document.getElementById('userInfo');
+  const lb = document.getElementById('loginBtn');
+  if(currentUser){
+    el.textContent = currentUser.name + " | " + (hasPaidForCurrentPost ? "Paid" : "₦200 to post");
+    lb.textContent = currentUser.name.split(" ")[0];
+    const wpInput = document.getElementById('pWhatsApp');
+    if(wpInput && !wpInput.value) wpInput.value = currentUser.phone;
+  } else {
+    el.textContent = "Guest - Login to Sell";
+    lb.textContent = "Login";
+  }
+}
+
+function toWaLink(phone){
+  let p = phone.replace(/[^0-9]/g,'');
+  if(p.startsWith('0')) p = '234' + p.substring(1);
+  if(!p.startsWith('234')) p = '234' + p;
+  return 'https://wa.me/' + p;
+}
+
+function renderProducts(){
+  const grid = document.getElementById('productGrid');
+  grid.innerHTML = "";
+  products.slice().reverse().forEach((p, idx)=>{
+    const realIndex = products.length - 1 - idx;
+    const waLink = toWaLink(p.phone);
+    const msg = encodeURIComponent("Hello " + p.seller + ", I see your " + p.name + " for ₦" + p.price + " on AkureMarket2. E still available?");
+    const fullWa = waLink + "?text=" + msg;
+
+    const div = document.createElement('div');
+    div.className = 'product';
+    div.innerHTML = `
+      <img src="${p.image}" alt="${p.name}" onerror="this.src='https://via.placeholder.com/300x200?text=AkureMarket2'">
+      <div class="product-body">
+        <div style="font-weight:900;font-size:13px;">${p.name}</div>
+        <div class="price">₦${Number(p.price).toLocaleString()}</div>
+        <div class="location">${p.location} • ${p.category}</div>
+        <div class="seller">${p.seller} • ${p.phone}</div>
+        <div class="desc">${p.desc.substring(0,90)}...</div>
+        <a href="${fullWa}" target="_blank" style="text-decoration:none;">
+          <button class="btn btn-whatsapp" style="padding:9px;font-size:12px;">WhatsApp Direct - Chat Seller</button>
+        </a>
+        <button class="btn btn-green" style="padding:9px;font-size:12px;" onclick="buyProduct(${realIndex})">BUY NOW - Pay Inside Site</button>
+      </div>`;
+    grid.appendChild(div);
+  });
+}
+
+function openLogin(){ document.getElementById('loginModal').classList.remove('hidden'); }
+function closeLogin(){ document.getElementById('loginModal').classList.add('hidden'); }
+
+function doLogin(){
+  const name = document.getElementById('uName').value.trim();
+  const phone = document.getElementById('uPhone').value.trim();
+  const pass = document.getElementById('uPass').value.trim();
+  if(!name || !phone || !pass){ showMsg("Fill all - Name, WhatsApp, Password", "error"); return; }
+  currentUser = {name, phone, pass};
+  localStorage.setItem('ak2_user', JSON.stringify(currentUser));
+  updateUserInfo();
+  closeLogin();
+  showMsg("Welcome " + name + "! Your WhatsApp " + phone + " saved - Now click SELL ₦200 to post your own product!", "success");
+}
+
+function showHome(){
+  document.getElementById('sellSection').classList.add('hidden');
+  document.getElementById('productsSection').classList.remove('hidden');
+}
+
+function openSell(){
+  if(!currentUser){ openLogin(); showMsg("Login first - Put your name & WhatsApp", "error"); return; }
+  document.getElementById('productsSection').classList.add('hidden');
+  document.getElementById('sellSection').classList.remove('hidden');
+  refreshPayUI();
+  window.scrollTo(0,0);
+}
+
+function closeSell(){ showHome(); }
+
+function refreshPayUI(){
+  const payBtn = document.getElementById('payBtn');
+  const pubBtn = document.getElementById('publishBtn');
+  const st = document.getElementById('payStatus');
+  if(hasPaidForCurrentPost){
+    payBtn.classList.add('hidden');
+    pubBtn.classList.remove('hidden');
+    st.classList.remove('hidden');
+    st.className = 'status success';
+    st.textContent = 'Payment Confirmed! You don pay ₦200. Now fill product, upload picture, click PUBLISH - Everybody go see am!';
+  } else {
+    payBtn.classList.remove('hidden');
+    pubBtn.classList.add('hidden');
+    st.classList.remove('hidden');
+    st.className = 'status error';
+    st.textContent = 'You never pay for this post. Click PAY ₦200 - Paystack popup go open INSIDE site.';
+  }
+}
+
+document.getElementById('pImageFile').addEventListener('change', function(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    currentImageBase64 = ev.target.result;
+    const prev = document.getElementById('pPreview');
+    prev.src = currentImageBase64;
+    prev.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+});
+
+function payToPost(){
+  if(!currentUser){ openLogin(); return; }
+  if(hasPaidForCurrentPost){ showMsg("You don already pay! Fill product and publish!", "success"); refreshPayUI(); return; }
+  const amount = 200 * 100;
+  const email = currentUser.phone + "@akuremarket2.com";
+  const handler = PaystackPop.setup({
+    key: PAYSTACK_PUBLIC_KEY,
+    email: email,
+    amount: amount,
+    currency: "NGN",
+    ref: "AK2_POST_" + Date.now(),
+    onClose: function(){ showMsg("Payment closed - Try again.", "error"); },
+    callback: function(response){
+      hasPaidForCurrentPost = true;
+      localStorage.setItem('ak2_hasPaid', JSON.stringify(true));
+      showMsg("PAYMENT SUCCESS! Ref: " + response.reference + " - Now you fit upload picture & PUBLISH!", "success");
+      refreshPayUI();
+      updateUserInfo();
+    }
+  });
+  handler.openIframe();
+}
+
+function publishProduct(){
+  if(!hasPaidForCurrentPost){ showMsg("Pay ₦200 first!", "error"); return; }
+  const name = document.getElementById('pName').value.trim();
+  const price = document.getElementById('pPrice').value.trim();
+  const cat = document.getElementById('pCategory').value;
+  const loc = document.getElementById('pLocation').value;
+  const wp = document.getElementById('pWhatsApp').value.trim();
+  const desc = document.getElementById('pDesc').value.trim();
+
+  if(!name || !price || !cat || !loc || !wp || !desc){ showMsg("Fill ALL fields", "error"); return; }
+  if(!currentImageBase64){
+    currentImageBase64 = "https://via.placeholder.com/500x350?text=" + encodeURIComponent(name);
+  }
+
+  const newProd = {name, price, location: loc, category: cat, phone: wp, seller: currentUser.name, desc, image: currentImageBase64, date: new Date().toISOString()};
+  products.push(newProd);
+  localStorage.setItem('ak2_products', JSON.stringify(products));
+
+  hasPaidForCurrentPost = false;
+  localStorage.setItem('ak2_hasPaid', JSON.stringify(false));
+  currentImageBase64 = "";
+
+  document.getElementById('pName').value = "";
+  document.getElementById('pPrice').value = "";
+  document.getElementById('pCategory').value = "";
+  document.getElementById('pLocation').value = "";
+  document.getElementById('pDesc').value = "";
+  document.getElementById('pImageFile').value = "";
+  document.getElementById('pPreview').style.display = 'none';
+
+  renderProducts();
+  showHome();
+  showMsg("Product Published! Everybody fit see am now! Buyer go press WhatsApp button chat you direct!", "success");
+  updateUserInfo();
+}
+
+function buyProduct(index){
+  if(!currentUser){ openLogin(); showMsg("Login to buy", "error"); return; }
+  const prod = products[index];
+  const amount = Number(prod.price) * 100;
+  const email = currentUser.phone + "@akuremarket2.com";
+
+  const handler = PaystackPop.setup({
+    key: PAYSTACK_PUBLIC_KEY,
+    email: email,
+    amount: amount,
+    currency: "NGN",
+    ref: "AK2_BUY_" + Date.now(),
+    onClose: function(){ showMsg("Buy cancelled", "error"); },
+    callback: function(response){
+      const waLink = toWaLink(prod.phone);
+      const msg = encodeURIComponent("Hello " + prod.seller + ", I don pay ₦" + prod.price + " for " + prod.name + " Ref: " + response.reference);
+      showMsg("You don pay ₦" + prod.price + " for " + prod.name + "! Now chat seller: " + prod.phone, "success");
+      window.open(waLink + "?text=" + msg, "_blank");
+    }
+  });
+  handler.openIframe();
+}
+
+/* Added marketplace enhancements; original functions and product data above remain. */
+let marketSaved = JSON.parse(localStorage.getItem('ak2_saved_products') || '[]');
+if(!Array.isArray(marketSaved)) marketSaved = [];
+let marketView = 'all';
+
+function marketProductKey(p){
+  return String(p.date || '') + '|' + String(p.name || '') + '|' + String(p.price || '') + '|' + String(p.phone || '');
+}
+function marketSafeText(value){ return String(value == null ? '' : value).toLowerCase(); }
+function addMarketActions(){
+  const cards = Array.from(document.querySelectorAll('#productGrid .product'));
+  cards.forEach((card, displayIndex)=>{
+    const body = card.querySelector('.product-body');
+    if(!body || body.querySelector('.extra-actions')) return;
+    const p = products[products.length - 1 - displayIndex];
+    if(!p) return;
+    const key = marketProductKey(p);
+    const actions = document.createElement('div');
+    actions.className = 'extra-actions';
+    const save = document.createElement('button');
+    save.type = 'button';
+    save.className = 'extra-action' + (marketSaved.includes(key) ? ' is-saved' : '');
+    save.textContent = marketSaved.includes(key) ? '♥ Saved' : '♡ Save';
+    save.onclick = function(){
+      if(marketSaved.includes(key)) marketSaved = marketSaved.filter(k=>k!==key);
+      else marketSaved.push(key);
+      localStorage.setItem('ak2_saved_products', JSON.stringify(marketSaved));
+      marketView = 'all';
+      applyMarketFilters();
+      showMsg(marketSaved.includes(key) ? 'Product saved on this device.' : 'Product removed from saved products.', 'success');
+    };
+    const share = document.createElement('button');
+    share.type = 'button';
+    share.className = 'extra-action';
+    share.textContent = '↗ Share';
+    share.onclick = async function(){
+      const shareText = p.name + ' — ₦' + Number(p.price).toLocaleString('en-NG') + ' • ' + p.location + ' • AkureMarket2';
+      if(navigator.share){
+        try{ await navigator.share({title:p.name, text:shareText, url:location.href}); }
+        catch(e){ if(e && e.name !== 'AbortError') showMsg('Sharing was not completed. You can copy the product details.', 'error'); }
+      }else if(navigator.clipboard && navigator.clipboard.writeText){
+        try{ await navigator.clipboard.writeText(shareText + ' ' + location.href); showMsg('Product details copied. Paste them into WhatsApp or Facebook.', 'success'); }
+        catch(e){ showMsg(shareText, 'success'); }
+      }else{
+        showMsg(shareText, 'success');
+      }
+    };
+    actions.append(save,share);
+    body.appendChild(actions);
+  });
+}
+function applyMarketFilters(){
+  const search = marketSafeText(document.getElementById('marketSearch').value.trim());
+  const category = document.getElementById('marketCategory').value;
+  const sort = document.getElementById('marketSort').value;
+  const grid = document.getElementById('productGrid');
+  const cards = Array.from(grid.querySelectorAll('.product'));
+  const entries = cards.map((card, i)=>({card, p:products[products.length - 1 - i]})).filter(x=>x.p);
+  let visible = entries.filter(({p})=>{
+    const matchesText = [p.name,p.category,p.location,p.seller,p.desc,p.phone].some(v=>marketSafeText(v).includes(search));
+    const matchesCategory = !category || p.category === category;
+    const matchesSaved = marketView !== 'saved' || marketSaved.includes(marketProductKey(p));
+    return matchesText && matchesCategory && matchesSaved;
+  });
+  if(sort==='low') visible.sort((a,b)=>Number(a.p.price)-Number(b.p.price));
+  else if(sort==='high') visible.sort((a,b)=>Number(b.p.price)-Number(a.p.price));
+  else if(sort==='az') visible.sort((a,b)=>String(a.p.name).localeCompare(String(b.p.name)));
+  else visible.sort((a,b)=>new Date(b.p.date||0)-new Date(a.p.date||0));
+  cards.forEach(c=>c.hidden=true);
+  visible.forEach(({card})=>{card.hidden=false;grid.appendChild(card);});
+  let empty = document.getElementById('marketEmptyResults');
+  if(!empty){
+    empty = document.createElement('div'); empty.id='marketEmptyResults'; empty.className='empty-results'; empty.hidden=true;
+    grid.appendChild(empty);
+  }
+  empty.hidden = visible.length !== 0;
+  empty.textContent = marketView==='saved' ? 'No saved products match. Save products using the ♡ Save button.' : 'No products found. Try another search or category.';
+  document.getElementById('marketResultCount').textContent = visible.length + ' product' + (visible.length===1?'':'s') + (marketView==='saved'?' saved':' found');
+}
+function showAllMarketProducts(){
+  marketView='all';
+  document.getElementById('marketSearch').value='';
+  document.getElementById('marketCategory').value='';
+  document.getElementById('marketSort').value='newest';
+  showHome();
+  renderProducts();
+}
+function showSavedMarketProducts(){
+  marketView='saved';
+  document.getElementById('marketSearch').value='';
+  document.getElementById('marketCategory').value='';
+  showHome();
+  renderProducts();
+}
+const originalRenderProducts = renderProducts;
+renderProducts = function(){
+  originalRenderProducts();
+  addMarketActions();
+  applyMarketFilters();
+};
+document.getElementById('marketSearch').addEventListener('input', applyMarketFilters);
+document.getElementById('marketCategory').addEventListener('change', applyMarketFilters);
+document.getElementById('marketSort').addEventListener('change', applyMarketFilters);
+
+updateUserInfo();
+renderProducts();
+refreshPayUI();
+</script>
+</body>
+</html>
